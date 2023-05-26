@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accelerometer Data Web App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Accelerometer Data Web App</h1>
+  <p>Acceleration (in m/s²)</p>
+  <div id="acceleration">
+    <p>X: <span id="acceleration-x">0</span></p>
+    <p>Y: <span id="acceleration-y">0</span></p>
+    <p>Z: <span id="acceleration-z">0</span></p>
+  </div>
+
+  <script>
+    function handleDeviceMotion(event) {
+      var ax = event.acceleration.x;
+      var ay = event.acceleration.y;
+      var az = event.acceleration.z;
+
+      document.getElementById('acceleration-x').textContent = ax.toFixed(2);
+      document.getElementById('acceleration-y').textContent = ay.toFixed(2);
+      document.getElementById('acceleration-z').textContent = az.toFixed(2);
+    }
+
+    if ('DeviceMotionEvent' in window) {
+      window.addEventListener('devicemotion', handleDeviceMotion, true);
+    } else {
+      alert('DeviceMotionEvent is not supported by your device or browser.');
+    }
+  </script>
+</body>
+</html>
