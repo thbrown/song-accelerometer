@@ -19,17 +19,79 @@
     <p>X: <span id="acceleration-x">0</span></p>
     <p>Y: <span id="acceleration-y">0</span></p>
     <p>Z: <span id="acceleration-z">0</span></p>
+    <p>Running Cadence: <span id="running-cadence">0</span> SPM</p>
   </div>
 
   <script>
+    class RunningCadenceEstimator {
+      constructor(windowSize, sampleRate, threshold) {
+        this.windowSize = windowSize;
+        this.sampleRate = sampleRate;
+        this.threshold = threshold;
+        this.data = [];
+      }
+
+      movingAverage(windowData) {
+        const avg = windowData.reduce((a, b) => a + b, 0) / this.windowSize;
+        return avg;
+      }
+
+      isPeak(smoothedData, index) {
+        return (
+          smoothedData[index] > this.threshold &&
+          smoothedData[index] > smoothedData[index - 1] &&
+          smoothedData[index] > smoothedData[index + 1]
+        );
+      }
+
+      update(newDataPoint) {
+        this.data.push(newDataPoint);
+
+        if (this.data.length > this.windowSize) {
+          this.data.shift();
+        }
+
+        if (this.data.length < this.windowSize) {
+          return 0;
+        }
+
+        const smoothedData = this.data.map((_, i, data) => {
+          const windowData = data.slice(Math.max(i - this.windowSize + 1, 0), i + 1);
+          return this.movingAverage(windowData);
+        });
+
+        let stepCount = 0;
+        for (let i = 1; i < smoothedData.length - 1; i++) {
+          if (this.isPeak(smoothedData, i)) {
+            stepCount++;
+          }
+        }
+
+        const elapsedTime = this.data.length / this.sampleRate;
+        const cadence = (stepCount / elapsedTime) * 60;
+
+        return cadence;
+      }
+    }
+
+    const windowSize = 5;
+    const sampleRate = 60;
+    const threshold = 0.2;
+    const estimator = new RunningCadenceEstimator(windowSize, sampleRate, threshold);
+
     function handleDeviceMotion(event) {
       var ax = event.acceleration.x;
       var ay = event.acceleration.y;
       var az = event.acceleration.z;
 
+      const newDataPoint = Math.sqrt(ax*ax + ay*ay + az*az);
+      const currentCadence = estimator.update(newDataPoint);
+      //console.log(`Current running cadence: ${currentCadence.toFixed(2)} steps per minute`);
+
       document.getElementById('acceleration-x').textContent = ax.toFixed(2);
       document.getElementById('acceleration-y').textContent = ay.toFixed(2);
       document.getElementById('acceleration-z').textContent = az.toFixed(2);
+      document.getElementById('running-cadence').textContent = currentCadence.toFixed(2);
     }
 
     if ('DeviceMotionEvent' in window) {
@@ -37,6 +99,8 @@
     } else {
       alert('DeviceMotionEvent is not supported by your device or browser.');
     }
+
+    
   </script>
 </body>
 </html>
